@@ -1,93 +1,91 @@
-create dajango project 
+# Real-time Pizza Order Tracking System
 
-then after create app 
+This is a Django-based project for tracking pizza orders in real-time using **WebSockets**, **Django Channels**, and **Redis**. The project also includes **static file handling**, **templates**, and **Tailwind CSS** for front-end styling. It allows users to view the progress of their pizza order in real-time and updates the order status dynamically.
 
-then register app in setting.py
+## Features
+- Real-time pizza order tracking using WebSockets
+- Redis-powered channel layers for real-time data transfer
+- Signal-based event triggers on order status changes
+- Tailwind CSS for a modern UI design
 
-create order schema 
+## Prerequisites
 
-create pizz list chema 
+Before setting up this project, ensure that you have the following installed on your machine:
 
-create static folder in app directory
+- Python 3.12
+- Redis server
+- Node.js and npm (for Tailwind CSS)
+- Django 5 
+- Django Channels
+- Channels Redis
 
-create template directory add same app name  add base.html and as per requirement file 
+## Setup Instructions
 
-add static and template direcotry in setting.py
+### 1. Clone the Repository
 
+```bash
+git clone https://github.com/yourusername/realtimetracking.git
+cd realtimetracking
+```
 
-install requirend 
+### 2. Create a Virtual Environment
 
-use 
+Set up a virtual environment for Python dependencies:
 
-channel 
-redish 
-signal 
+```bash
+python3 -m venv venv
+source venv/bin/activate  # For Linux/Mac
+# OR
+venv\Scripts\activate  # For Windows
+```
 
-create consumer.py file in  (like view.py weite your logic )
+### 3. Install Dependencies
 
-cofigure asig file 
+Install the required Python packages:
 
+```bash
+pip install -r requirements.txt
+```
 
-"""
-ASGI config for realtimetracking project.
+The `requirements.txt` file should contain:
+```
+Django==4.2
+channels==4.0.0
+channels-redis==4.0.0
+```
 
-It exposes the ASGI callable as a module-level variable named ``application``.
+### 4. Install and Configure Redis
 
-For more information on this file, see
-https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
-"""
+Make sure Redis is installed and running:
 
-import os
-from django.core.asgi import get_asgi_application
+- For **Linux**:  
+  ```bash
+  sudo apt install redis
+  sudo service redis-server start
+  ```
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'realtimetracking.settings')
+- For **Mac**:  
+  Install via Homebrew:
+  ```bash
+  brew install redis
+  brew services start redis
+  ```
 
+- For **Windows**:  
+  Download Redis for Windows from the official repository [here](https://github.com/microsoftarchive/redis/releases).
 
-application = get_asgi_application()
+### 5. Configure Django Settings
 
-from channels.routing import ProtocolTypeRouter, URLRouter
-from django.urls import path
-from pizzatracker.consumer import OrderProgess
+In `realtimetracking/settings.py`, ensure the following settings are added for **Channels** and **Redis**:
 
-
-
-ws_pattern = [
-    path("ws/pizza/<order_id>/",OrderProgess),
+```python
+INSTALLED_APPS = [
+    # Other installed apps...
+    'pizzatracker',
+    'channels',
 ]
 
-application = ProtocolTypeRouter({
-    "websocket": (
-        (
-            URLRouter(ws_pattern)
-        )
-    ),
-})
-
-
-
-set as per route file for websokcket url 
-
-
-
-
-configure setting.py file 
-
-    'channels',  
-
-
-    add in installed app 
-
-
-# WSGI_APPLICATION = 'realtimetracking.wsgi.application'
 ASGI_APPLICATION = 'realtimetracking.asgi.application'
-
-comment wegi aplicaion
-and uncomment asgi apiilication
-
-
-
-add channel layer 
-
 
 CHANNEL_LAYERS = {
     "default": {
@@ -97,118 +95,161 @@ CHANNEL_LAYERS = {
         },
     },
 }
+```
 
+### 6. Setup Database and Migrate
 
+Run the following commands to create the database and migrate the models:
 
-add consumenr.py
+```bash
+python manage.py makemigrations pizzatracker
+python manage.py migrate
+```
 
+### 7. Tailwind CSS Installation
+
+To style the frontend, install **Tailwind CSS** using npm:
+
+```bash
+npm install -D tailwindcss
+npx tailwindcss init
+```
+
+Update the `tailwind.config.js` file to point to your templates:
+
+```js
+module.exports = {
+  content: ['./pizzatracker/templates/**/*.html'],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+```
+
+Run Tailwind CSS to watch for changes:
+
+```bash
+npx tailwindcss -i ./pizzatracker/static/input.css -o ./pizzatracker/static/output.css --watch
+```
+
+### 8. Run the Redis Server
+
+Make sure Redis is running on your local machine:
+
+```bash
+redis-server
+```
+
+### 9. Run Django Development Server
+
+Run the Django development server:
+
+```bash
+python manage.py runserver
+```
+
+### 10. WebSocket Testing
+
+Use a WebSocket client like **WebSocket King** or **Postman** to test the real-time order status tracking. You can hit the WebSocket URL in the format:
+
+```bash
+ws://127.0.0.1:8000/ws/pizza/<order_id>/
+```
+
+For testing, add a pizza order and track its status through WebSockets.
+
+## Application Overview
+
+### Directory Structure
+
+```
+realtimetracking/
+│
+├── pizzatracker/               # Django App for Pizza tracking
+│   ├── migrations/             # Django migrations
+│   ├── static/                 # Static files (CSS, JS, Images)
+│   ├── templates/              # HTML templates for the frontend
+│   ├── consumers.py            # WebSocket consumer for real-time order tracking
+│   ├── models.py               # Order and Pizza models
+│   ├── views.py                # View logic (if any)
+│   └── urls.py                 # URL routing for the app
+│
+├── realtimetracking/           # Main project folder
+│   ├── asgi.py                 # ASGI configuration for Channels
+│   ├── settings.py             # Project settings
+│   └── urls.py                 # Main project URL routing
+│
+└── manage.py                   # Django management script
+```
+
+### WebSocket Consumer
+
+In `pizzatracker/consumers.py`, the logic for handling WebSocket connections:
+
+```python
 from channels.generic.websocket import WebsocketConsumer
-from .models import Pizza,Order
-from asgiref.sync import async_to_sync,sync_to_async
+from .models import Order
+from asgiref.sync import async_to_sync
 import json
-
 
 class OrderProgess(WebsocketConsumer):
     def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['order_id']
         self.room_group_name = f'order_{self.room_name}' 
+
         async_to_sync(self.channel_layer.group_add)(
             self.room_group_name,
             self.channel_name
         )
 
         order = Order.give_order_details(self.room_name)
-        # exit()
         self.accept()
-        self.send(text_data = json.dumps(
-            {
-                "payload":order
-            }
-        ))
-
-        # return super().connect()
-    
-    # def order_status(self,event):
-    #     print(event)
-    #     print("hello",event)
-    #     data = json.loads(event['value'])
-    #     print(data)
-
+        self.send(text_data=json.dumps({"payload": order}))
 
     def order_status(self, event):
-        # Print event for debugging purposes
-        print("Received order status event:", event)
-        
-        # Parse the data from the event
         data = json.loads(event['value'])
-        print("Parsed data:", data)
-
-        # Send the updated order status to the WebSocket client
-        self.send(text_data=json.dumps({
-            'payload': data
-        }))
-
-
-
-        
-    def receive(self, text_data=None, bytes_data=None):
-        pass        
+        self.send(text_data=json.dumps({'payload': data}))
 
     def disconnect(self, close_code):
-        # Remove the WebSocket connection from the group on disconnect
         async_to_sync(self.channel_layer.group_discard)(
             self.room_group_name,
             self.channel_name
         )
+```
 
+### Signal for Order Status Updates
 
+In `pizzatracker/models.py`, add Django signals to trigger WebSocket updates:
 
+```python
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from .models import Order
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+import json
 
-
-
-from dajngo challen documention  change as per requiremen llogic 
-
-
-go to model file to create signal functionlity to when some chancge on order chancge then triggger  signal send to trigger event
-
-
-@receiver(post_save, sender = Order)
-def order_status_handler(sender,instance,created,**kwargs):
+@receiver(post_save, sender=Order)
+def order_status_handler(sender, instance, created, **kwargs):
     if not created:
         channel_layer = get_channel_layer()
-        data =  {
+        data = {
             "order_id": str(instance.order_id),
             "amount": instance.amount,
             "status": instance.status,
-            "order_progress":order_mapper[instance.status]
         }
         async_to_sync(channel_layer.group_send)(
             f'order_{instance.order_id}',
             {
-                'type':'order_status',
-                'value':json.dumps(data)
-            })
+                'type': 'order_status',
+                'value': json.dumps(data)
+            }
+        )
+```
 
-            add this code to in your djagno model file form trigger whenever change order status
+## Testing
 
-
-            after then test in websocket king 
-            add url add order id  hit enter 
-
-            return json payload then after send to template file 
-    
-
-
-
-and finally step to add websoket url in templfile call and update in document.getelemt id  through update ui 
-
-
-
-change order status  work or not 
-
-
-
-then after install tailwind css installl
-
-
-
+1. Add an order using the Django admin interface or Django shell.
+2. Open a WebSocket client and connect to the WebSocket URL with the order ID.
+3. Change the order status from the admin panel or shell and see real-time updates reflected in the WebSocket client.
